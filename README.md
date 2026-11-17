@@ -19,8 +19,15 @@ For each hour h = 2..24, the program takes the log-ratio
 log(viewers_h / viewers_1) of every comparable past launch and combines them
 with a Gaussian kernel centred on this case's hour-1 print (bandwidth 0.75
 in log space): launches whose hour-1 print was close to ours count most.
-The forecast median is the kernel-weighted median of the log-ratios; the
-spread is the kernel-weighted standard deviation around it, shrunk by 0.75
+The forecast median is the kernel-weighted TRIMMED MEAN of the log-ratios
+— the lowest and highest 20% of the total kernel weight are dropped before
+averaging. The plain weighted median is robust but throws away most of the
+information in the matched launches; the plain weighted mean uses it all
+but is dragged by the odd launch whose shape is nothing like the rest.
+The trimmed mean sits between them, and beats the median on both the
+practice cases (0.171 vs 0.186) and leave-one-out cross-validation over
+the 18 big comparables (0.258 vs 0.261).
+The spread is the kernel-weighted standard deviation around it, shrunk by 0.75
 (the raw cross-launch spread overstates how uncertain a matched launch is),
 with a floor of 0.25 in log space. Quantiles are the normal quantiles of
 that log-scale distribution, exponentiated and scaled by the hour-1 print.
@@ -44,16 +51,17 @@ baseline's published practice numbers (loss 0.387, typical miss 82.8%,
 
 | case | game | Launch Shape Matcher | house baseline |
 | ---- | ---- | -------------------- | -------------- |
-| p00 | Marvel's Wolverine | 0.3048 | 0.7436 |
-| p01 | Red Dead Redemption 2 | 0.1316 | 0.2868 |
-| p02 | God of War Ragnarök | 0.1182 | 0.2146 |
-| p03 | Marvel's Spider-Man 2 | 0.1903 | 0.3033 |
-| **mean** | | **0.1862** | **0.3871** |
+| p00 | Marvel's Wolverine | 0.2508 | 0.7436 |
+| p01 | Red Dead Redemption 2 | 0.1327 | 0.2868 |
+| p02 | God of War Ragnarök | 0.1037 | 0.2146 |
+| p03 | Marvel's Spider-Man 2 | 0.1981 | 0.3033 |
+| **mean** | | **0.1713** | **0.3871** |
 
-Typical miss 35.0% (baseline 82.7%), 90% coverage 0.935 (baseline 0.783).
+Typical miss 29.5% (baseline 82.7%), 90% coverage 0.935 (baseline 0.783).
 Leave-one-out cross-validation over the 18 big comparables (hour-1 ≥ 10k)
-gives 0.261 vs the baseline's 0.392, so the edge is not just the four
-practice cases.
+gives 0.258 vs the baseline's 0.392, so the edge is not just the four
+practice cases. (Before the trimmed-mean centre: practice 0.1862 —
+p00 0.3048, p01 0.1316, p02 0.1182, p03 0.1903 — LOO 0.261, miss 35.0%.)
 
 ## Running
 

@@ -16,11 +16,20 @@ So, for each hour h = 2..24, we take the log-ratio log(viewers_h / viewers_1)
 of every comparable past launch, and combine them with a Gaussian kernel
 centred on this case's hour-1 print (bandwidth 0.75 in log space): launches
 whose hour-1 print was close to ours count most.  The forecast median is
-the kernel-weighted median of the log-ratios; the spread is the
-kernel-weighted standard deviation around it, shrunk by 0.75 (the raw
-cross-launch spread overstates how uncertain a matched launch is) with a
-floor of 0.25 in log space.  Quantiles are the normal quantiles of that
-log-scale distribution, exponentiated and scaled by the hour-1 print.
+the kernel-weighted TRIMMED MEAN of the log-ratios: the lowest and highest
+20% of the total kernel weight are dropped before averaging.  The plain
+weighted median is robust but throws away most of the information in the
+matched launches (it is one order statistic); the plain weighted mean uses
+it all but is dragged by the odd launch whose shape is nothing like the
+rest.  The trimmed mean sits between them: a few idiosyncratic launches
+cannot drag the centre, while the bulk of the matched launches still
+inform it.  It beats the median on both the practice cases (mean pinball
+loss 0.171 vs 0.186) and leave-one-out cross-validation over the 18 big
+comparables (0.258 vs 0.261).  The spread is the kernel-weighted standard
+deviation around it, shrunk by 0.75 (the raw cross-launch spread overstates
+how uncertain a matched launch is) with a floor of 0.25 in log space.
+Quantiles are the normal quantiles of that log-scale distribution,
+exponentiated and scaled by the hour-1 print.
 
 Only comparables marked "Tier: comparable" are used: early-access
 contaminated launches (their peak came days before release day), weak
@@ -44,6 +53,7 @@ Z = (-1.6448536269514722, -0.6744897501960817, 0.0,
      0.6744897501960817, 1.6448536269514722)
 
 KERNEL_BANDWIDTH = 0.75   # in log space, on log(hour-1 viewers)
+TRIM_FRACTION = 0.20  # weight trimmed from each tail before averaging
 SPREAD_SHRINK = 0.75      # kernel sd overstates matched-launch uncertainty
 SPREAD_FLOOR = 0.25       # minimum log-scale spread
 MIN_CLEAN = 5             # need at least this many clean comparables
@@ -104,18 +114,37 @@ def collect_library(case):
     return library
 
 
-def weighted_median(pairs):
-    """Weighted median of (value, weight) pairs; pairs need not be sorted."""
+def weighted_trimmed_mean(pairs):
+    """Kernel-weighted mean of (value, weight) pairs after trimming.
+
+    The lowest and highest TRIM_FRACTION of the total weight are dropped,
+    then the weighted mean of what is left is taken.  A pair whose weight
+    straddles a cut is kept whole.  Falls back to the weighted median when
+    trimming would leave nothing (e.g. a single comparable).
+    """
     total = sum(w for _, w in pairs)
     if total <= 0:
         return None
     ordered = sorted(pairs)
+    lo_cut = TRIM_FRACTION * total
+    hi_cut = (1.0 - TRIM_FRACTION) * total
     acc = 0.0
+    kept = []
     for value, weight in ordered:
         acc += weight
-        if acc >= total / 2:
-            return value
-    return ordered[-1][0]
+        if acc <= lo_cut or acc - weight >= hi_cut:
+            continue
+        kept.append((value, weight))
+    if not kept:
+        # Trimming removed everything: fall back to the weighted median.
+        acc = 0.0
+        for value, weight in ordered:
+            acc += weight
+            if acc >= total / 2:
+                return value
+        return ordered[-1][0]
+    kept_total = sum(w for _, w in kept)
+    return sum(v * w for v, w in kept) / kept_total
 
 
 def forecast_hour(hour1, library, hour):
@@ -131,7 +160,7 @@ def forecast_hour(hour1, library, hour):
         pairs.append((math.log(viewers / comp_hour1), weight))
     if not pairs:
         return None
-    median = weighted_median(pairs)
+    median = weighted_trimmed_mean(pairs)
     total = sum(w for _, w in pairs)
     variance = sum(w * (v - median) ** 2 for v, w in pairs) / total
     spread = max(math.sqrt(variance) * SPREAD_SHRINK, SPREAD_FLOOR)

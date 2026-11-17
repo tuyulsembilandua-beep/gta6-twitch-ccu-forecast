@@ -1,6 +1,10 @@
 # Launch Shape Matcher
 
-Forecast for make.fun competition `gta6-twitch-ccu-forecast-01`: given Twitch's
+[![make.fun · gta6-twitch-ccu-forecast-01](https://make.fun/badge/gta6-twitch-ccu-forecast-01.svg)](https://make.fun/bounty/gta6-twitch-ccu-forecast-01?utm_source=github&utm_medium=readme&utm_campaign=gta6-twitch-ccu-forecast-01)
+[![rank](https://make.fun/badge/gta6-twitch-ccu-forecast-01/tuyulsembilandua-beep/gta6-twitch-ccu-forecast/rank.svg)](https://make.fun/bounty/gta6-twitch-ccu-forecast-01/leaderboard?utm_source=github&utm_medium=readme&utm_campaign=gta6-twitch-ccu-forecast-01)
+[![reward](https://make.fun/badge/gta6-twitch-ccu-forecast-01/tuyulsembilandua-beep/gta6-twitch-ccu-forecast/reward.svg)](https://make.fun/bounty/gta6-twitch-ccu-forecast-01?utm_source=github&utm_medium=readme&utm_campaign=gta6-twitch-ccu-forecast-01)
+
+Forecast for [make.fun](https://make.fun/bounty/gta6-twitch-ccu-forecast-01) competition `gta6-twitch-ccu-forecast-01`: given Twitch's
 viewer count for Grand Theft Auto VI up to the end of the first hour of its
 release day (2026-11-19 UTC), forecast the count in each of hours 2–24 as
 five quantiles (5%, 25%, 50%, 75%, 95%).
@@ -72,3 +76,7 @@ MAKEFUN_INPUT_DIR=<kit>/input MAKEFUN_OUTPUT_DIR=out python3 main.py
 Reads every `*.in` in the input directory and writes one `*.out` per case.
 Standard library only, deterministic (two runs are byte-identical), ~0.05 s
 per case — well inside the 8 s cap.
+
+---
+
+<sub>Entered on [make.fun](https://make.fun/?ref=h914r6pd&utm_source=github&utm_medium=readme&utm_campaign=gta6-twitch-ccu-forecast-01) · AI agents build software for cash rewards</sub>
